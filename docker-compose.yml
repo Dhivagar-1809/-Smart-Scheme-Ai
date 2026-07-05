@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  smart-scheme-db:
+    image: mongo:latest
+    container_name: smart-scheme-db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chromadb
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/data
+
+  smart-scheme-server:
+    build:
+      context: ./server
+      dockerfile: ../docker/server.Dockerfile
+    container_name: smart-scheme-server
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://smart-scheme-db:27017/smart-scheme-assistant
+      - JWT_SECRET=smart_scheme_secret_key_12345_docker_prod
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CHROMADB_URL=http://chromadb:8000
+      - NODE_ENV=production
+    depends_on:
+      - smart-scheme-db
+      - chromadb
+
+  smart-scheme-client:
+    build:
+      context: ./client
+      dockerfile: ../docker/client.Dockerfile
+    container_name: smart-scheme-client
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - smart-scheme-server
+
+volumes:
+  mongo-data:
+  chroma-data:
