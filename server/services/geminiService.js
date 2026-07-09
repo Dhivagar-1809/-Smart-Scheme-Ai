@@ -11,19 +11,19 @@ if (!apiKey) {
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 /**
- * Generate text embeddings using text-embedding-004
+ * Generate text embeddings using "gemini-embedding-2"
  */
 export const getEmbedding = async (text) => {
   if (!genAI) {
-    return Array(768).fill(0); // Return placeholder vector if API key is not present
+    return Array(3072).fill(0); // Return placeholder vector if API key is not present
   }
   try {
-    const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const model = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
     const result = await model.embedContent(text);
     return result.embedding.values;
   } catch (error) {
     console.error("Error generating embedding:", error);
-    return Array(768).fill(0);
+    return Array(3072).fill(0);
   }
 };
 
@@ -54,7 +54,7 @@ export const evaluateEligibility = async (userProfile, matchingSchemes) => {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.2
@@ -92,17 +92,17 @@ ${JSON.stringify(userProfile, null, 2)}
 
 CANDIDATE SCHEMES FOR EVALUATION:
 ${JSON.stringify(matchingSchemes.map(s => ({
-  id: s._id,
-  name: s.name,
-  description: s.description,
-  category: s.category,
-  state: s.state,
-  eligibilityRules: s.eligibility,
-  benefits: s.benefits,
-  documents: s.documents,
-  officialWebsite: s.officialWebsite,
-  department: s.department
-})), null, 2)}
+      id: s._id,
+      name: s.name,
+      description: s.description,
+      category: s.category,
+      state: s.state,
+      eligibilityRules: s.eligibility,
+      benefits: s.benefits,
+      documents: s.documents,
+      officialWebsite: s.officialWebsite,
+      department: s.department
+    })), null, 2)}
 
 Evaluate each scheme carefully. If the user does not qualify for a scheme based on its age limits, income caps, or category rules, exclude it. If they qualify, explain exactly why in the "eligibilityReason" field.
 `;
@@ -126,7 +126,7 @@ export const chatWithAssistant = async (query, history, userProfile) => {
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: `
 You are Smart Scheme Assistant. You are an Indian Government Welfare Expert.
 You assist citizens in discovering government schemes, understanding eligibility, documents, and application steps.
@@ -143,11 +143,22 @@ Explain simply. Keep responses well-formatted with markdown and lists where appr
 `
     });
 
-    const chat = model.startChat({
-      history: history.map(h => ({
-        role: h.sender === 'user' ? 'user' : 'model',
+    // Ensure chat history starts with a user message
+    const formattedHistory = history
+      .map(h => ({
+        role: h.sender === "user" ? "user" : "model",
         parts: [{ text: h.message }]
-      })),
+      }))
+      .filter((msg, index, arr) => {
+        // Remove leading model messages
+        if (index === 0 && msg.role !== "user") {
+          return false;
+        }
+        return true;
+      });
+
+    const chat = model.startChat({
+      history: formattedHistory,
       generationConfig: {
         temperature: 0.3
       }
