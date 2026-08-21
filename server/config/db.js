@@ -14,11 +14,8 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error('MONGODB_URI environment variable is not defined');
-    }
-
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const dbUri = process.env.MONGODB_URI || 'mongodb+srv://dhiva5286_db_user:Dhivagar45@cluster0.cybvti4.mongodb.net/?retryWrites=true&w=majority';
+    const conn = await mongoose.connect(dbUri);
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
 
