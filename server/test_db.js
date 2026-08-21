@@ -4,7 +4,13 @@ import { Scheme } from './models/schemas.js';
 import connectDB from './config/db.js';
 import dns from 'dns';
 
-dns.setServers(['8.8.8.8', '1.1.1.1']);
+if (!process.env.VERCEL) {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+  } catch (err) {
+    console.warn('Failed to set custom DNS servers:', err.message);
+  }
+}
 
 dotenv.config();
 
