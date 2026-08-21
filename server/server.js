@@ -54,7 +54,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // DB Connection
-connectDB();
+connectDB().catch(err => console.error('Initial DB Connection Error:', err.message));
 
 // API Routes
 app.use('/api', apiRoutes);
