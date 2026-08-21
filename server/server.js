@@ -82,9 +82,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err.stack);
   res.status(500).json({
-    message: process.env.NODE_ENV === 'production'
-      ? 'An internal server error occurred.'
-      : err.message
+    message: err.message
   });
 });
 
